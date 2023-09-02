@@ -3,11 +3,8 @@ import Burger from "../../components/Burger/Burger";
 import BuildControls from "../../components/Burger/BuildControls/BuildControls";
 import Modal from "../../components/UI/Modal/Modal";
 import OrderSummary from "../../components/Burger/OrderSummary/OrderSummary";
-
-const initialValue = {
-  ingredients: { salad: 0, bacon: 0, cheese: 0, meat: 0 },
-  totalPrice: 4,
-};
+import Spinner from "../../components/UI/Spinner/Spinner";
+import { useNavigate } from "react-router-dom";
 
 const INGREDIENT_PRICES = {
   salad: 0.5,
@@ -16,10 +13,19 @@ const INGREDIENT_PRICES = {
   meat: 1.3,
 };
 
-const BurgerBuilder = () => {
-  const [burgerBuilder, setBurgerBuilder] = useState(initialValue);
+const BurgerBuilder = (props) => {
+  const {
+    burgerBuilder,
+    setBurgerBuilder,
+    loading,
+
+    modal,
+    setModal,
+  } = props;
+
   const [order, setOrder] = useState(false);
-  const [modal, setModal] = useState(false);
+
+  const navigate = useNavigate();
 
   const updatePurchasable = (ingredients) => {
     const sum = Object.keys(ingredients)
@@ -80,7 +86,18 @@ const BurgerBuilder = () => {
   };
 
   const purchaseContinueHandler = () => {
-    alert("neca hemija");
+    const queryParams = [];
+    for (let i in burgerBuilder.ingredients) {
+      queryParams.push(
+        encodeURIComponent(i) +
+          "=" +
+          encodeURIComponent(burgerBuilder.ingredients[i])
+      );
+    }
+
+    const queryString = queryParams.join("&");
+
+    navigate({ pathname: "checkout", search: "?" + queryString });
   };
 
   const disabledInfo = {
@@ -91,14 +108,22 @@ const BurgerBuilder = () => {
     disabledInfo[key] = disabledInfo[key] <= 0;
   }
 
+  let orderSummary = (
+    <OrderSummary
+      burgerBuilder={burgerBuilder}
+      purchaseContinueHandler={purchaseContinueHandler}
+      modalClosed={modalClosed}
+    />
+  );
+
+  if (loading) {
+    orderSummary = <Spinner />;
+  }
+
   return (
     <>
       <Modal show={modal} modalClosed={modalClosed}>
-        <OrderSummary
-          burgerBuilder={burgerBuilder}
-          purchaseContinueHandler={purchaseContinueHandler}
-          modalClosed={modalClosed}
-        />
+        {orderSummary}
       </Modal>
       <Burger burgerBuilder={burgerBuilder} />
       <BuildControls
